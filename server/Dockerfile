@@ -1,15 +1,13 @@
-﻿# server/Dockerfile
-
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
+﻿FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
-COPY server/server.sln ./
 COPY server/api/api.csproj ./api/
 
-RUN dotnet restore "server.sln"
+RUN dotnet restore "api/api.csproj"
 
 COPY server/ ./
 
+# Publish the API
 RUN dotnet publish "api/api.csproj" \
     -c Release \
     -o /app/publish \
@@ -17,6 +15,7 @@ RUN dotnet publish "api/api.csproj" \
     --self-contained true \
     /p:PublishSingleFile=true
 
+# Runtime image
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-alpine
 WORKDIR /app
 COPY --from=build /app/publish .
