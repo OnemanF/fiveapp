@@ -1,23 +1,56 @@
-using System.Data.Common;
-using api;
+using System.ComponentModel.DataAnnotations;
+using api.Services;
 using efscaffold;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+namespace api;
 
-var appOptions = builder.Services.AddAppOptions(builder.Configuration);
-
-builder.Services.AddDbContext<MyDbContext>(conf =>
+public class Program
 {
-    conf.UseNpgsql(appOptions.DbConnectionString);
-});
+    public static void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton<AppOptions>(provider =>
+        {
+            var configuration = provider.GetRequiredService<IConfiguration>();
+            var appOptions = new AppOptions();
+            configuration.GetSection(nameof(AppOptions)).Bind(appOptions);
+            return appOptions;
+        });
+        services.AddDbContext<MyDbContext>((services, options) =>
+        {
+            options.UseNpgsql(services.GetRequiredService<AppOptions>().DbConnectionString);
+        });
+        services.AddControllers();
+        services.AddOpenApiDocument();
+        services.AddCors();
+        services.AddScoped<ILibraryService, LibraryService>();
+        services.AddScoped<ISeeder, Seeder>();
+        services.AddExceptionHandler<MyGlobalExceptionHandler>();
+    }
 
-var app = builder.Build();
+    public static void Main()
+    {
+        var builder = WebApplication.CreateBuilder();
+        ConfigureServices(builder.Services);
+        var app = builder.Build();
 
-app.MapGet("/", ([FromServices] MyDbContext db) =>
-{   
-    var objects = db.Authors.ToList();
-});
-    
-app.Run();
+
+        var appOptions = app.Services.GetRequiredService<AppOptions>();
+        //Here im just checking that I can get the "Db" connection string - it throws exception if not minimum 1 length
+        Validator.ValidateObject(appOptions, new ValidationContext(appOptions), true);
+        app.UseExceptionHandler(config => { });
+        app.UseOpenApi();
+        app.UseSwaggerUi();
+        app.UseCors(config => config.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().SetIsOriginAllowed(x => true));
+        app.MapControllers();
+        app.GenerateApiClientsFromOpenApi("/../../client/src/generated-client.ts").GetAwaiter().GetResult();
+        if (app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
+            {
+                var seeder = scope.ServiceProvider.GetService<ISeeder>();
+                if (seeder != null) seeder.Seed();
+            }
+
+        app.Run();
+    }
+}

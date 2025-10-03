@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace efscaffold;
 
-namespace efscaffold.Entities;
-
-public partial class Author
+public class Genre
 {
     public string Id { get; set; } = null!;
 

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace efscaffold;
 
-namespace efscaffold.Entities;
-
-public partial class Book
+public class Book
 {
     public string Id { get; set; } = null!;
 
