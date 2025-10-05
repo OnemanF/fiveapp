@@ -1,23 +1,16 @@
-﻿# Use .NET SDK for build
+﻿# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
-# Copy everything from server folder into /src/server
-COPY . ./server/
+# Copy everything from current folder (which is already /server)
+COPY . .
 
-# Set working directory to the api project
-WORKDIR /src/server/api
+# Set working directory to the API project
+WORKDIR /src/api
 
-# Restore dependencies
+# Restore and publish
 RUN dotnet restore "api.csproj"
-
-# Publish project
-RUN dotnet publish "api.csproj" \
-    -c Release \
-    -o /app/publish \
-    --runtime linux-musl-x64 \
-    --self-contained true \
-    /p:PublishSingleFile=true
+RUN dotnet publish "api.csproj" -c Release -o /app/publish --runtime linux-musl-x64 --self-contained true /p:PublishSingleFile=true
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-alpine
