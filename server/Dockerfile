@@ -1,14 +1,17 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
+﻿# Use .NET SDK for build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
-# Copy all project files first
-COPY . .
-WORKDIR /src/api
+# Copy everything from server folder into /src/server
+COPY . ./server/
 
-# Restore now that all referenced projects exist
+# Set working directory to the api project
+WORKDIR /src/server/api
+
+# Restore dependencies
 RUN dotnet restore "api.csproj"
 
-# Publish
+# Publish project
 RUN dotnet publish "api.csproj" \
     -c Release \
     -o /app/publish \
@@ -20,6 +23,6 @@ RUN dotnet publish "api.csproj" \
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-alpine
 WORKDIR /app
 COPY --from=build /app/publish .
-ENV ASPNETCORE_URLS=http://localhost:8080/
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 ENTRYPOINT ["./api"]
