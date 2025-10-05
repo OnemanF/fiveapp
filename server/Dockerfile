@@ -2,9 +2,8 @@
 WORKDIR /src
 
 # Copy all project files first
-COPY server/ ./server/
-
-WORKDIR /src/server/api
+COPY . .
+WORKDIR /src/api
 
 # Restore now that all referenced projects exist
 RUN dotnet restore "api.csproj"
