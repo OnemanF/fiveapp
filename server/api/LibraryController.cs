@@ -5,41 +5,45 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace api;
 
-public class LibraryController(ILibraryService libraryService) : ControllerBase
+[ApiController]
+[Route("api/[controller]")]
+public class LibraryController : ControllerBase
 {
-    [HttpGet(nameof(GetAuthors))]
-    public async Task<List<AuthorDto>> GetAuthors()
+    private readonly ILibraryService _libraryService;
+
+    public LibraryController(ILibraryService libraryService)
     {
-        return await libraryService.GetAuthors();
+        _libraryService = libraryService;
     }
+
+    [HttpGet(nameof(GetAuthors))]
+    public async Task<List<AuthorDto>> GetAuthors() => await _libraryService.GetAuthors();
 
     [HttpGet(nameof(GetBooks))]
-    public async Task<List<BookDto>> GetBooks()
-    {
-        return await libraryService.GetBooks();
-    }
+    public async Task<List<BookDto>> GetBooks() => await _libraryService.GetBooks();
 
     [HttpGet(nameof(GetGenres))]
-    public async Task<List<GenreDto>> GetGenres()
-    {
-        return await libraryService.GetGenres();
-    }
+    public async Task<List<GenreDto>> GetGenres() => await _libraryService.GetGenres();
 
     [HttpPost(nameof(CreateBook))]
     public async Task<BookDto> CreateBook([FromBody] CreateBookRequestDto dto)
-    {
-        return await libraryService.CreateBook(dto);
-    }
+        => await _libraryService.CreateBook(dto);
 
     [HttpPut(nameof(UpdateBook))]
     public async Task<BookDto> UpdateBook([FromBody] UpdateBookRequestDto dto)
-    {
-        return await libraryService.UpdateBook(dto);
-    }
+        => await _libraryService.UpdateBook(dto);
 
     [HttpDelete(nameof(DeleteBook))]
     public async Task<BookDto> DeleteBook([FromQuery] string bookId)
+        => await _libraryService.DeleteBook(bookId);
+
+    [HttpGet("books/paginated")]
+    public async Task<IActionResult> GetBooksPaginated(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        return await libraryService.DeleteBook(bookId);
+        int skip = (page - 1) * pageSize;
+        var books = await _libraryService.GetBooksPaginated(skip, pageSize);
+        return Ok(books);
     }
 }

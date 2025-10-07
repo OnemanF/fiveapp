@@ -20,9 +20,15 @@ public class Program
         {
             options.UseNpgsql(services.GetRequiredService<AppOptions>().DbConnectionString);
         });
-        services.AddControllers();
+        
+        services.AddControllers()
+            .AddJsonOptions(x =>
+                x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+        
         services.AddOpenApiDocument();
         services.AddCors();
+        
+        
         services.AddScoped<ILibraryService, LibraryService>();
         services.AddScoped<ISeeder, Seeder>();
         services.AddExceptionHandler<MyGlobalExceptionHandler>();
