@@ -6,7 +6,7 @@ WORKDIR /src
 COPY api/api.csproj ./api/
 RUN dotnet restore ./api/api.csproj
 
-# Copy all and publish
+# Copy all source
 COPY . .
 RUN dotnet publish ./api/api.csproj \
     -c Release \
@@ -23,5 +23,5 @@ COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
 
-# Must match output binary name (usually 'api')
+# Must match published binary name
 ENTRYPOINT ["./api"]
