@@ -37,6 +37,7 @@ public class LibraryController : ControllerBase
     public async Task<BookDto> DeleteBook([FromQuery] string bookId)
         => await _libraryService.DeleteBook(bookId);
 
+    // ✅ Simple pagination endpoint
     [HttpGet("books/paginated")]
     public async Task<IActionResult> GetBooksPaginated(
         [FromQuery] int page = 1,
@@ -44,6 +45,13 @@ public class LibraryController : ControllerBase
     {
         int skip = (page - 1) * pageSize;
         var books = await _libraryService.GetBooksPaginated(skip, pageSize);
+        return Ok(books);
+    }
+    
+    [HttpPost("books/fetch")]
+    public async Task<IActionResult> FetchBooks([FromBody] FetchBooksRequestDto dto)
+    {
+        var books = await _libraryService.FetchBooksAsync(dto);
         return Ok(books);
     }
 }
