@@ -1,5 +1,5 @@
 import {useAtom} from "jotai";
-import {AllAuthorsAtom, AllBooksAtom} from "../atoms/atoms.ts";
+import {AllBooksAtom} from "../atoms/atoms.ts";
 import {useState} from "react";
 import {ApiException, type BookDto, type CreateBookRequestDto} from "../generated-client.ts";
 import {libraryApi} from "../api-clients.ts";
@@ -14,7 +14,6 @@ export interface BookProps {
 export default function Books() {
 
     const [books, setAllBooks] = useAtom(AllBooksAtom);
-    const [authors] = useAtom(AllAuthorsAtom);
     const [createBookForm, setCreateBookForm] = useState<CreateBookRequestDto>({
         pages: 1,
         title: "my amazing new book"

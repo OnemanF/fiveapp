@@ -3,14 +3,14 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 COPY . .
-RUN npm run build 
+RUN npm run build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
 RUN echo $'\
 server { \n\
-    listen 80; \n\
+    listen 8080; \n\
     location / { \n\
         root /usr/share/nginx/html; \n\
         index index.html index.htm; \n\
@@ -18,5 +18,5 @@ server { \n\
     } \n\
 }' > /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
