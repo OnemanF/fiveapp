@@ -1,46 +1,58 @@
-﻿using efscaffold;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using efscaffold;
 
-namespace api;
-
-public class Seeder(MyDbContext ctx) : ISeeder
+namespace api
 {
-    public async Task Seed()
+    public class Seeder
     {
-        //Remove all before starting to add any
-        ctx.Books.RemoveRange(ctx.Books);
-        ctx.Authors.RemoveRange(ctx.Authors);
-        ctx.Genres.RemoveRange(ctx.Genres);
-        ctx.SaveChanges();
+        private readonly MyDbContext _ctx;
 
-        var author = new Author
+        public Seeder(MyDbContext ctx)
         {
-            Createdat = DateTime.UtcNow,
-            Id = "1",
-            Name = "Bob"
-        };
-        ctx.Authors.Add(author);
-        ctx.SaveChanges();
-        var book = new Book
+            _ctx = ctx;
+        }
+
+        public async Task Seed()
         {
-            Createdat = DateTime.UtcNow,
-            Id = "1",
-            Pages = 42,
-            Title = "Bobs book"
-        };
-        ctx.Books.Add(book);
-        ctx.SaveChanges();
-        var genre = new Genre
-        {
-            Createdat = DateTime.UtcNow,
-            Id = "1",
-            Name = "thriller"
-        };
-        ctx.Genres.Add(genre);
-        ctx.SaveChanges();
+            // Clear previous data
+            _ctx.Books.RemoveRange(_ctx.Books);
+            _ctx.Authors.RemoveRange(_ctx.Authors);
+            _ctx.Genres.RemoveRange(_ctx.Genres);
+            await _ctx.SaveChangesAsync();
+
+            // Add author
+            var author = new Author
+            {
+                Id = "1",
+                Name = "Bob",
+                Createdat = DateTime.UtcNow
+            };
+            _ctx.Authors.Add(author);
+
+            // Add genre
+            var genre = new Genre
+            {
+                Id = "1",
+                Name = "Thriller",
+                Createdat = DateTime.UtcNow
+            };
+            _ctx.Genres.Add(genre);
+
+            // Add book with author and genre
+            var book = new Book
+            {
+                Id = "1",
+                Title = "Bobs book",
+                Pages = 42,
+                Createdat = DateTime.UtcNow,
+                Authors = new List<Author> { author },
+                Genre = genre
+            };
+            _ctx.Books.Add(book);
+
+            await _ctx.SaveChangesAsync();
+        }
     }
-}
-
-public interface ISeeder
-{
-    public Task Seed();
 }

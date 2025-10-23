@@ -9,6 +9,7 @@ public class Program
 {
     public static void ConfigureServices(IServiceCollection services)
     {
+        // App options
         services.AddSingleton<AppOptions>(provider =>
         {
             var configuration = provider.GetRequiredService<IConfiguration>();
@@ -16,47 +17,58 @@ public class Program
             configuration.GetSection(nameof(AppOptions)).Bind(appOptions);
             return appOptions;
         });
+
+        // DbContext
         services.AddDbContext<MyDbContext>((services, options) =>
         {
             options.UseNpgsql(services.GetRequiredService<AppOptions>().DbConnectionString);
         });
-        
+
+        // Controllers
         services.AddControllers()
             .AddJsonOptions(x =>
                 x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
-        
+
+        // OpenAPI / Swagger
         services.AddOpenApiDocument();
         services.AddCors();
-        
-        
+
+        // Services
         services.AddScoped<ILibraryService, LibraryService>();
-        services.AddScoped<ISeeder, Seeder>();
+
+        // Exception handler
         services.AddExceptionHandler<MyGlobalExceptionHandler>();
     }
 
-    public static void Main()
+    public static async Task Main()
     {
         var builder = WebApplication.CreateBuilder();
         ConfigureServices(builder.Services);
         var app = builder.Build();
 
-
+        // Validate app options
         var appOptions = app.Services.GetRequiredService<AppOptions>();
-        //Here im just checking that I can get the "Db" connection string - it throws exception if not minimum 1 length
         Validator.ValidateObject(appOptions, new ValidationContext(appOptions), true);
+
         app.UseExceptionHandler(config => { });
+        app.UseCors(config => config.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().SetIsOriginAllowed(x => true));
         app.UseOpenApi();
         app.UseSwaggerUi();
-        app.UseCors(config => config.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().SetIsOriginAllowed(x => true));
         app.MapControllers();
-        app.GenerateApiClientsFromOpenApi("/../../client/src/generated-client.ts").GetAwaiter().GetResult();
-        if (app.Environment.IsDevelopment())
-            using (var scope = app.Services.CreateScope())
-            {
-                var seeder = scope.ServiceProvider.GetService<ISeeder>();
-                if (seeder != null) seeder.Seed();
-            }
 
-        app.Run();
+        // Generate client
+        await app.GenerateApiClientsFromOpenApi("/../../client/src/generated-client.ts");
+
+        // Seed database in development
+        if (app.Environment.IsDevelopment())
+        {
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<MyDbContext>();
+            var seeder = new Seeder(dbContext);
+            await seeder.Seed();
+        }
+
+        // Run app
+        await app.RunAsync();
     }
 }

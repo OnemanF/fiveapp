@@ -1,27 +1,17 @@
-﻿# Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
+﻿FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
-
-# Copy and restore
-COPY api/api.csproj ./api/
-RUN dotnet restore ./api/api.csproj
-
-# Copy all source
-COPY . .
-RUN dotnet publish ./api/api.csproj \
+COPY ["./", "."]
+RUN dotnet publish "api/api.csproj" \
     -c Release \
     -o /app/publish \
-    --self-contained true \
     --runtime linux-musl-x64 \
+    --self-contained true \
     /p:PublishSingleFile=true
 
-# Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-alpine
 WORKDIR /app
 COPY --from=build /app/publish .
-
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
 
-# Must match published binary name
 ENTRYPOINT ["./api"]
